@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Otroligt Bot v4</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --surface: #12181f;
+      --surface2: #1a222d;
+      --border: #2a3544;
+      --text: #e8eef6;
+      --muted: #8b9bb0;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --blue: #3b82f6;
+      --purple: #a78bfa;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+    }
+    header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    h1 span { color: var(--blue); }
+    .badge {
+      font-size: 0.7rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      color: var(--muted);
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-left: auto;
+      align-items: center;
+    }
+    button, .btn {
+      background: var(--blue);
+      color: white;
+      border: none;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .status {
+      font-size: 0.8rem;
+      color: var(--muted);
+      min-width: 140px;
+    }
+    main { padding: 1.25rem 1.5rem 3rem; max-width: 1400px; margin: 0 auto; }
+
+    /* Config panel */
+    .config {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+    .config.open { display: block; }
+    .config h2 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    input[type="number"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    /* Summary */
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      min-width: 110px;
+    }
+    .stat .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
+    .stat .value { font-size: 1.35rem; font-weight: 700; }
+
+    /* Cards */
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      transition: border-color 0.15s;
+    }
+    .card.buy { border-color: rgba(34, 197, 94, 0.45); }
+    .card.sell { border-color: rgba(239, 68, 68, 0.45); }
+    .card.error { border-color: rgba(245, 158, 11, 0.45); }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pair {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .decision {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .decision.buy { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+    .decision.sell { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+    .decision.wait { background: var(--surface2); color: var(--muted); }
+    .decision.error { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .meta span {
+      background: var(--surface2);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+    .levels {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+    }
+    .levels div {
+      background: var(--surface2);
+      padding: 0.4rem 0.5rem;
+      border-radius: 6px;
+    }
+    .levels .lbl { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; }
+    .levels .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .levels .stop .val { color: var(--red); }
+    .levels .target .val { color: var(--green); }
+    .confirmations {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .confirmations ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.25rem;
+    }
+    .confirmations li {
+      background: var(--surface2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .pos-size {
+      font-size: 0.8rem;
+      color: var(--purple);
+      font-weight: 500;
+    }
+    .empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    @media (max-width: 600px) {
+      header, main { padding-left: 1rem; padding-right: 1rem; }
+      .levels { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Otroligt <span>Bot</span> <span class="badge">v4</span></h1>
+    <div class="controls">
+      <span class="status" id="status">Ready</span>
+      <button class="secondary" id="btnConfig">Config</button>
+      <button class="secondary" id="btnHistory">History</button>
+      <button id="btnScan">Scan Now</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="config" id="configPanel">
+      <h2>Scan Parameters</h2>
+      <div class="grid">
+        <label>Equity (USD)
+          <input type="number" id="cfg_equity" value="10000" step="100" min="100" />
+        </label>
+        <label>Risk %
+          <input type="number" id="cfg_risk_pct" value="1" step="0.1" min="0.1" max="10" />
+        </label>
+        <label>Reward : Risk
+          <input type="number" id="cfg_rr" value="4" step="0.5" min="1" max="10" />
+        </label>
+        <label>Cache (min)
+          <input type="number" id="cfg_cache_minutes" value="8" step="1" min="0" max="60" />
+        </label>
+        <label>RSI Long Low
+          <input type="number" id="cfg_rsi_long_low" value="50" step="1" />
+        </label>
+        <label>RSI Long High
+          <input type="number" id="cfg_rsi_long_high" value="70" step="1" />
+        </label>
+        <label>RSI Short Low
+          <input type="number" id="cfg_rsi_short_low" value="30" step="1" />
+        </label>
+        <label>RSI Short High
+          <input type="number" id="cfg_rsi_short_high" value="50" step="1" />
+        </label>
+        <label>ATR Structure
+          <input type="number" id="cfg_atr_structure" value="0.25" step="0.05" />
+        </label>
+        <label>ATR Fallback
+          <input type="number" id="cfg_atr_fallback" value="1.5" step="0.1" />
+        </label>
+      </div>
+    </div>
+
+    <div class="summary" id="summary" style="display:none">
+      <div class="stat"><div class="label">Signals</div><div class="value" id="sSignals">–</div></div>
+      <div class="stat"><div class="label">Buys</div><div class="value" style="color:var(--green)" id="sBuys">–</div></div>
+      <div class="stat"><div class="label">Sells</div><div class="value" style="color:var(--red)" id="sSells">–</div></div>
+      <div class="stat"><div class="label">Waits</div><div class="value" id="sWaits">–</div></div>
+      <div class="stat"><div class="label">Errors</div><div class="value" style="color:var(--amber)" id="sErrors">–</div></div>
+      <div class="stat"><div class="label">Elapsed</div><div class="value" id="sElapsed">–</div></div>
+    </div>
+
+    <div class="results" id="results">
+      <div class="empty">Press <strong>Scan Now</strong> to fetch live signals from Kraken.</div>
+    </div>
+  </main>
+
+  <footer>
+    Closed-candle signals only · Data from Kraken public API · Not financial advice
+  </footer>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const statusEl = $("#status");
+    const resultsEl = $("#results");
+    const summaryEl = $("#summary");
+    const configPanel = $("#configPanel");
+
+    function getConfig() {
+      return {
+        equity: $("#cfg_equity").value,
+        risk_pct: $("#cfg_risk_pct").value,
+        rr: $("#cfg_rr").value,
+        cache_minutes: $("#cfg_cache_minutes").value,
+        rsi_long_low: $("#cfg_rsi_long_low").value,
+        rsi_long_high: $("#cfg_rsi_long_high").value,
+        rsi_short_low: $("#cfg_rsi_short_low").value,
+        rsi_short_high: $("#cfg_rsi_short_high").value,
+        atr_structure: $("#cfg_atr_structure").value,
+        atr_fallback: $("#cfg_atr_fallback").value,
+      };
+    }
+
+    function fmt(n, digits = 4) {
+      if (n == null || !isFinite(n)) return "–";
+      if (Math.abs(n) >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      if (Math.abs(n) >= 1) return n.toFixed(Math.min(digits, 4));
+      return n.toPrecision(4);
+    }
+
+    function regimeClass(r) {
+      if (r === "BULLISH") return "color:var(--green)";
+      if (r === "BEARISH") return "color:var(--red)";
+      if (r === "BULLISH_BIAS") return "color:#4ade80";
+      if (r === "BEARISH_BIAS") return "color:#f87171";
+      return "";
+    }
+
+    function renderCard(r) {
+      const dec = (r.decision || "WAIT").toLowerCase();
+      let levels = "";
+      if (r.entry != null) {
+        levels = `
+          <div class="levels">
+            <div><div class="lbl">Entry</div><div class="val">${fmt(r.entry)}</div></div>
+            <div class="stop"><div class="lbl">Stop</div><div class="val">${fmt(r.stop)}</div></div>
+            <div class="target"><div class="lbl">Target (${r.rr}R)</div><div class="val">${fmt(r.target)}</div></div>
+          </div>`;
+      }
+      let pos = "";
+      if (r.position_size != null) {
+        pos = `<div class="pos-size">Size ≈ ${fmt(r.position_size, 4)} units · $${fmt(r.position_value, 2)}</div>`;
+      }
+      let conf = "";
+      if (r.confirmations && r.confirmations.length) {
+        conf = `<div class="confirmations"><ul>${r.confirmations.map(c => `<li>${c}</li>`).join("")}</ul></div>`;
+      }
+      let err = r.error ? `<div style="color:var(--amber);font-size:0.8rem">${r.error}</div>` : "";
+
+      return `
+        <div class="card ${dec}">
+          <div class="card-header">
+            <div class="pair">${r.pair}</div>
+            <div class="decision ${dec}">${r.decision}</div>
+          </div>
+          <div class="meta">
+            <span style="${regimeClass(r.regime)}">${r.regime || "–"}</span>
+            <span>Score ${r.score ?? 0}</span>
+            ${r.rsi != null ? `<span>RSI ${r.rsi}</span>` : ""}
+            ${r.price != null ? `<span>$${fmt(r.price)}</span>` : ""}
+          </div>
+          ${levels}
+          ${pos}
+          ${conf}
+          ${err}
+        </div>`;
+    }
+
+    async function scan() {
+      const btn = $("#btnScan");
+      btn.disabled = true;
+      statusEl.innerHTML = '<span class="spinner"></span> Scanning…';
+      resultsEl.innerHTML = '<div class="empty"><span class="spinner"></span> Fetching OHLC & calculating signals…</div>';
+
+      const cfg = getConfig();
+      const params = new URLSearchParams(cfg).toString();
+
+      try {
+        const res = await fetch("/api/scan?" + params);
+        const data = await res.json();
+
+        const buys = data.results.filter(r => r.decision === "BUY").length;
+        const sells = data.results.filter(r => r.decision === "SELL").length;
+        const waits = data.results.filter(r => r.decision === "WAIT").length;
+        const errors = data.errors || 0;
+
+        $("#sSignals").textContent = data.results.length;
+        $("#sBuys").textContent = buys;
+        $("#sSells").textContent = sells;
+        $("#sWaits").textContent = waits;
+        $("#sErrors").textContent = errors;
+        $("#sElapsed").textContent = data.elapsed_seconds + "s";
+        summaryEl.style.display = "flex";
+
+        // Sort: actionable first, then by score
+        const sorted = [...data.results].sort((a, b) => {
+          const rank = d => d === "BUY" || d === "SELL" ? 0 : d === "ERROR" ? 2 : 1;
+          return rank(a.decision) - rank(b.decision) || (b.score || 0) - (a.score || 0);
+        });
+
+        resultsEl.innerHTML = sorted.map(renderCard).join("");
+        statusEl.textContent = `Updated ${new Date(data.updated).toLocaleTimeString()}`;
+      } catch (e) {
+        resultsEl.innerHTML = `<div class="empty" style="color:var(--red)">Scan failed: ${e.message}</div>`;
+        statusEl.textContent = "Error";
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function showHistory() {
+      statusEl.innerHTML = '<span class="spinner"></span> Loading history…';
+      try {
+        const res = await fetch("/api/history?limit=15");
+        const data = await res.json();
+        if (!data.scans.length) {
+          resultsEl.innerHTML = '<div class="empty">No scan history yet.</div>';
+          summaryEl.style.display = "none";
+          statusEl.textContent = "No history";
+          return;
+        }
+        let html = "";
+        data.scans.forEach((scan, i) => {
+          const t = new Date(scan.updated).toLocaleString();
+          const buys = (scan.results || []).filter(r => r.decision === "BUY").length;
+          const sells = (scan.results || []).filter(r => r.decision === "SELL").length;
+          html += `<div class="card" style="margin-bottom:0.75rem">
+            <div class="card-header">
+              <div class="pair" style="font-size:0.95rem">Scan #${data.scans.length - i}</div>
+              <div class="meta"><span>${t}</span><span>${scan.elapsed_seconds}s</span></div>
+            </div>
+            <div class="meta">
+              <span style="color:var(--green)">${buys} BUY</span>
+              <span style="color:var(--red)">${sells} SELL</span>
+              <span>${(scan.results || []).length} pairs</span>
+            </div>
+          </div>`;
+        });
+        resultsEl.innerHTML = html;
+        summaryEl.style.display = "none";
+        statusEl.textContent = `${data.count} recent scans`;
+      } catch (e) {
+        resultsEl.innerHTML = `<div class="empty">History error: ${e.message}</div>`;
+        statusEl.textContent = "Error";
+      }
+    }
+
+    $("#btnScan").addEventListener("click", scan);
+    $("#btnConfig").addEventListener("click", () => configPanel.classList.toggle("open"));
+    $("#btnHistory").addEventListener("click", showHistory);
+
+    // Optional: auto-scan on load
+    // scan();
+  </script>
+</body>
+</html>
